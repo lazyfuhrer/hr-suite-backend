@@ -1,0 +1,11 @@
+export { AuthController } from './auth.controller';
+export { DepartmentController } from './department.controller';
+export { UserController } from './user.controller';
+export { EmployeeExitController } from './employee-exit.controller';
+export { OfficeLocationController } from './office-location.controller';
+export { GeofenceController } from './geofence.controller';
+export { WorkShiftController } from './work-shift.controller';
+export { PayrollController } from './payroll.controller';
+export { AdminPayrollController } from './admin-payroll.controller';
+export { DashboardController } from './dashboard.controller';
+export { AppraisalController } from './appraisal.controller';

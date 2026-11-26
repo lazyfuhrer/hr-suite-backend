@@ -1,0 +1,77 @@
+{
+  "name": "hr-management",
+  "version": "1.0.0",
+  "description": "Production-grade Node.js + Express + TypeScript starter",
+  "main": "dist/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "nodemon",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/index.js",
+    "db:setup": "npx knex --knexfile knexfile.ts migrate:latest && npx knex --knexfile knexfile.ts seed:run",
+    "db:cleanup:tenant": "ts-node src/database/scripts/cleanup-tenant-data.ts",
+    "simulate:attendance": "ts-node src/database/scripts/seed-simulated-attendance.ts",
+    "generate:attendance-bulk-import-sample": "ts-node src/tools/generate-attendance-bulk-import-sample.ts",
+    "lint": "eslint . --ext .ts",
+    "format": "prettier --check .",
+    "format:write": "prettier --write .",
+    "prepare": "husky",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@aws-sdk/client-rekognition": "^3.760.0",
+    "@aws-sdk/client-s3": "^3.760.0",
+    "@aws-sdk/client-textract": "^3.1008.0",
+    "@aws-sdk/s3-request-presigner": "^3.984.0",
+    "@types/pdfkit": "^0.17.4",
+    "@types/xlsx": "^0.0.35",
+    "axios": "^1.13.4",
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "exceljs": "^4.4.0",
+    "express": "^4.19.2",
+    "firebase-admin": "^13.8.0",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "knex": "^3.1.0",
+    "multer": "^1.4.5-lts.1",
+    "objection": "^3.1.5",
+    "pdfkit": "^0.17.2",
+    "pg": "^8.12.0",
+    "pino": "^9.3.2",
+    "pino-http": "^9.0.0",
+    "redis": "^4.7.0",
+    "uuid": "^13.0.0",
+    "xlsx": "^0.18.5",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^20.14.9",
+    "@typescript-eslint/eslint-plugin": "^8.18.0",
+    "@typescript-eslint/parser": "^8.18.0",
+    "eslint": "^9.39.0",
+    "eslint-config-prettier": "^9.1.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.7",
+    "nodemon": "^3.1.4",
+    "pino-pretty": "^11.2.2",
+    "prettier": "^3.3.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ]
+  }
+}

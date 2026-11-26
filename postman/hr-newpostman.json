@@ -1,0 +1,1023 @@
+{
+    "info": {
+        "name": "HR Management API 2",
+        "_postman_id": "a7e1c1d3-8b5f-4f6b-8f4d-8a0c7b3f2a11",
+        "description": "Complete collection for HR Management API testing with all endpoints including Office Locations, Work Shifts, Attendance, and S3 uploads.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Upload Onboarding Documents (auto face embedding)",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{tokenC}}",
+                        "description": "Tenant Admin or Employee Token"
+                    }
+                ],
+                "url": {
+                    "raw": "{{baseUrl}}/api/onboarding/documents",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "onboarding",
+                        "documents"
+                    ]
+                },
+                "body": {
+                    "mode": "formdata",
+                    "formdata": [
+                        {
+                            "key": "aadhar_front",
+                            "type": "file",
+                            "src": [],
+                            "description": "Identity Category"
+                        },
+                        {
+                            "key": "aadhar_back",
+                            "type": "file",
+                            "src": [],
+                            "description": "Identity Category"
+                        },
+                        {
+                            "key": "pan_card",
+                            "type": "file",
+                            "src": [],
+                            "description": "Identity Category"
+                        },
+                        {
+                            "key": "passport_size_photo",
+                            "type": "file",
+                            "src": [],
+                            "description": "Identity Category. When provided, the backend automatically generates and stores a facial embedding for this user."
+                        },
+                        {
+                            "key": "marksheet_10th",
+                            "type": "file",
+                            "src": [],
+                            "description": "Education Category"
+                        },
+                        {
+                            "key": "marksheet_12th",
+                            "type": "file",
+                            "src": [],
+                            "description": "Education Category"
+                        },
+                        {
+                            "key": "degree_certificate",
+                            "type": "file",
+                            "src": [],
+                            "description": "Education Category"
+                        },
+                        {
+                            "key": "experience_letter",
+                            "type": "file",
+                            "src": [],
+                            "description": "Experience Category"
+                        },
+                        {
+                            "key": "salary_slip_month_1",
+                            "type": "file",
+                            "src": [],
+                            "description": "Experience Category"
+                        }
+                    ]
+                },
+                "description": "Upload multiple onboarding documents. The middleware automatically sorts them into IDENTITY, EDUCATION, or EXPERIENCE folders based on the field names. When a 'passport_size_photo' is uploaded, the backend automatically generates and stores a facial embedding for the user using the configured FACE_EMBEDDING_API_URL service."
+            }
+        },
+        {
+            "name": "Upload Extra Employee Document (shows in employee-overview)",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{tokenC}}",
+                        "description": "Tenant Admin, HR, Manager, or Employee token"
+                    }
+                ],
+                "url": {
+                    "raw": "{{baseUrl}}/api/onboarding/employee/documents/upload-extra",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "onboarding",
+                        "employee",
+                        "documents",
+                        "upload-extra"
+                    ]
+                },
+                "body": {
+                    "mode": "formdata",
+                    "formdata": [
+                        {
+                            "key": "aadhar_front",
+                            "type": "file",
+                            "src": [],
+                            "description": "Upload any additional document using one of the supported keys: aadhar_front, aadhar_back, pan_card, passport_size_photo, passport, marksheet_10th, marksheet_12th, degree_certificate, previous_offer_letters, experience_letter, salary_slip_month_1, salary_slip_month_2, salary_slip_month_3."
+                        }
+                    ]
+                },
+                "description": "Let the current user upload an extra onboarding document for themselves.\n\nFor this endpoint, the file is stored in S3 using the original filename (sanitized) without a timestamp prefix, under orgs/{org_id}/users/{user_id}/documents/{CATEGORY}/{fieldName}/{original_file_name}.\n\nA matching record is saved in user_documents with the appropriate doc_category/doc_type so it automatically appears inside the `documents` object of `GET {{baseUrl}}/api/onboarding/{{userId}}/employee-overview` for this user."
+            }
+        },
+        {
+            "name": "Device Face Clock (In/Out via Face)",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{tokenB}}",
+                        "description": "Tenant Admin or Device token required"
+                    }
+                ],
+                "url": {
+                    "raw": "{{baseUrl}}/api/attendance/device/face-clock",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "attendance",
+                        "device",
+                        "face-clock"
+                    ]
+                },
+                "body": {
+                    "mode": "formdata",
+                    "formdata": [
+                        {
+                            "key": "image",
+                            "type": "file",
+                            "src": [],
+                            "description": "Captured face image file (required)."
+                        },
+                        {
+                            "key": "threshold",
+                            "type": "text",
+                            "value": "90",
+                            "description": "Optional similarity threshold (0-100) for Rekognition matching (default ~90)."
+                        }
+                    ]
+                },
+                "description": "Admin/Device endpoint for in-office device facial attendance.\n\nAuth:\n- Allowed roles: admin, device\n\nFlow:\n1) Device captures employee face and sends the image file directly as form-data.\n2) Backend uploads the image to S3, uses AWS Rekognition SearchFacesByImage on the configured collection, and maps the match via user_face_embeddings.\n3) If this is the user's first attendance log for today, they are clocked in; if they are already clocked in, they are clocked out.\n\nForm-data fields:\n- image (file, required): Captured face image.\n- threshold (text, optional): Rekognition similarity threshold (0-100, default ~90).\n\nIf org setting `face_clock_enabled` is false, this endpoint returns 403."
+            }
+        },
+        {
+            "name": "Face Clock - Location Verify (Employee/Manager/HR)",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{tokenC}}",
+                        "description": "Tenant Employee, Manager, or HR token required"
+                    }
+                ],
+                "url": {
+                    "raw": "{{baseUrl}}/api/attendance/face-clock/location-verify",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "attendance",
+                        "face-clock",
+                        "location-verify"
+                    ]
+                },
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"latitude\": 22.5726,\n  \"longitude\": 88.3639\n}"
+                },
+                "description": "Step 1 for user face clock-in flow. Verify whether current coordinates are eligible for clock-in for the logged-in employee/manager/hr. Returns 403 when org setting `face_clock_enabled` is false."
+            }
+        },
+        {
+            "name": "Face Verify & Clock In (Employee/Manager/HR)",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{tokenC}}",
+                        "description": "Tenant Employee, Manager, or HR token required"
+                    }
+                ],
+                "url": {
+                    "raw": "{{baseUrl}}/api/attendance/face-clock/verify-and-clock-in",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "attendance",
+                        "face-clock",
+                        "verify-and-clock-in"
+                    ]
+                },
+                "body": {
+                    "mode": "formdata",
+                    "formdata": [
+                        {
+                            "key": "image",
+                            "type": "file",
+                            "src": [],
+                            "description": "Selfie/face image file for verification (required)."
+                        },
+                        {
+                            "key": "threshold",
+                            "type": "text",
+                            "value": "90",
+                            "description": "Optional similarity threshold (0-100)."
+                        }
+                    ]
+                },
+                "description": "Step 2 for user face clock-in flow. Matches uploaded face with logged-in user's indexed passport photo face and clocks the user in on success. Returns 403 when org setting `face_clock_enabled` is false."
+            }
+        },
+        {
+            "name": "Get Employee Profile Overview (All Roles)",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{tokenC}}",
+                        "description": "Tenant token for any org member (admin/hr/manager/employee)"
+                    }
+                ],
+                "url": {
+                    "raw": "{{baseUrl}}/api/onboarding/{{userId}}/employee-overview",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "onboarding",
+                        "{{userId}}",
+                        "employee-overview"
+                    ]
+                },
+                "description": "Single composite endpoint for the employee profile screen (About / Work / Doc tabs).\n\nAuth:\n- Allowed roles: admin, hr, manager, employee\n- Admin/HR can fetch any user in the same org by userId.\n- Manager/Employee can only fetch their own profile (userId must equal their id).\n\nResponse structure:\n{\n  \"message\": \"Employee overview retrieved successfully\",\n  \"data\": {\n    \"about\": { /* personal + contact info */ },\n    \"work\": { /* job details, reporting manager, team, work location */ },\n    \"documents\": { /* recent documents list */ }\n  }\n}"
+            }
+        },
+        {
+            "name": "Helpdesk - Create Ticket",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{tokenC}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{baseUrl}}/api/helpdesk/tickets",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "helpdesk",
+                        "tickets"
+                    ]
+                },
+                "body": {
+                    "mode": "formdata",
+                    "formdata": [
+                        {
+                            "key": "category",
+                            "value": "it_support",
+                            "type": "text"
+                        },
+                        {
+                            "key": "subject",
+                            "value": "New laptop request",
+                            "type": "text"
+                        },
+                        {
+                            "key": "description",
+                            "value": "Requesting a new laptop for design work.",
+                            "type": "text"
+                        },
+                        {
+                            "key": "priority",
+                            "value": "MEDIUM",
+                            "type": "text"
+                        },
+                        {
+                            "key": "attachment",
+                            "type": "file",
+                            "src": [],
+                            "description": "Optional attachment for the ticket."
+                        }
+                    ]
+                },
+                "description": "Create a Helpdesk ticket in one of the manual categories: it_support, hr_query, payroll."
+            }
+        },
+        {
+            "name": "Helpdesk - List My Tickets",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{tokenC}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{baseUrl}}/api/helpdesk/tickets/my?page=1&limit=10",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "helpdesk",
+                        "tickets",
+                        "my"
+                    ],
+                    "query": [
+                        {
+                            "key": "page",
+                            "value": "1"
+                        },
+                        {
+                            "key": "limit",
+                            "value": "10"
+                        }
+                    ]
+                },
+                "description": "List only the current caller user's Helpdesk tickets.\n\nAllowed roles: any authenticated org member."
+            }
+        },
+        {
+            "name": "Helpdesk - List Tickets (Org/Team)",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{tokenC}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{baseUrl}}/api/helpdesk/tickets?page=1&limit=10",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "helpdesk",
+                        "tickets"
+                    ],
+                    "query": [
+                        {
+                            "key": "page",
+                            "value": "1"
+                        },
+                        {
+                            "key": "limit",
+                            "value": "10"
+                        }
+                    ]
+                },
+                "description": "List Helpdesk tickets for the org/team.\n\nAllowed roles: admin, hr, manager.\nManager scope: only tickets created by the manager's department team members (plus their own)."
+            }
+        },
+        {
+            "name": "Helpdesk - Add Comment",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{tokenC}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{baseUrl}}/api/helpdesk/tickets/{{ticketId}}/comments",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "helpdesk",
+                        "tickets",
+                        "{{ticketId}}",
+                        "comments"
+                    ]
+                },
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"message\": \"Following up on this ticket.\"\n}"
+                },
+                "description": "Add a comment to a Helpdesk ticket. This moves the ticket to IN_PROGRESS."
+            }
+        },
+        {
+            "name": "Helpdesk - Resolve Ticket",
+            "request": {
+                "method": "PATCH",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{tokenB}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{baseUrl}}/api/helpdesk/tickets/{{ticketId}}/resolve",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "helpdesk",
+                        "tickets",
+                        "{{ticketId}}",
+                        "resolve"
+                    ]
+                },
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"resolution\": \"APPROVED\",\n  \"approver_comment\": \"Closing this ticket as resolved.\"\n}"
+                },
+                "description": "Resolve a Helpdesk ticket as APPROVED or REJECTED (admin/hr/manager only)."
+            }
+        },
+        {
+            "name": "Create Device Account (Admin)",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{tokenB}}",
+                        "description": "Tenant Admin token required"
+                    }
+                ],
+                "url": {
+                    "raw": "{{baseUrl}}/api/users/devices",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "users",
+                        "devices"
+                    ]
+                },
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"name\": \"Front Desk Device 1\",\n  \"employeeId\": \"DEV-FRONTDESK-1\"\n}"
+                },
+                "description": "Creates a dedicated device account for in-office hardware integrations (e.g., face clock devices).\n\nEndpoint: POST /api/users/devices\nAuth: Admin only\n\nBody:\n- name (string, required)\n- email (string, optional)\n- employeeId (string, optional)\n- password (string, optional; if omitted a password is generated and returned)\n\nResponse includes device_password for provisioning."
+            }
+        },
+        {
+            "name": "List Device Accounts (Admin)",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{tokenB}}",
+                        "description": "Tenant Admin token required"
+                    }
+                ],
+                "url": {
+                    "raw": "{{baseUrl}}/api/users/devices",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "users",
+                        "devices"
+                    ]
+                },
+                "description": "Returns a list of all device accounts in the current organization.\n\nEndpoint: GET /api/users/devices\nAuth: Admin only\n\nResponse:\n{\n  \"items\": [\n    {\n      \"id\": \"...\",\n      \"employee_id\": \"DEV-...\",\n      \"name\": \"Front Desk Device 1\",\n      \"official_email\": \"device+...@devices.hr-suite.local\",\n      \"status\": \"ACTIVE\",\n      \"created_at\": \"...\"\n    }\n  ]\n}"
+            }
+        },
+        {
+            "name": "Step 3: Bank & Asset Upsert",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "formdata",
+                    "formdata": [
+                        {
+                            "key": "ifsc_code",
+                            "value": "HDFC0001234",
+                            "type": "text",
+                            "description": "Optional: Only updates if provided"
+                        },
+                        {
+                            "key": "bank_name",
+                            "value": "HDFC Bank",
+                            "type": "text",
+                            "description": "Optional: Only updates if provided"
+                        },
+                        {
+                            "key": "account_number",
+                            "value": "50100456789012",
+                            "type": "text",
+                            "description": "Optional: Only updates if provided"
+                        },
+                        {
+                            "key": "account_holder_name",
+                            "value": "Fathima Mary J",
+                            "type": "text",
+                            "description": "Optional: Only updates if provided"
+                        },
+                        {
+                            "key": "asset_device_pref",
+                            "value": "MACBOOK",
+                            "type": "text",
+                            "description": "Optional: Only updates if provided and non-empty (omit/empty string keeps existing DB value). Must be WINDOWS, MACBOOK, or LINUX."
+                        },
+                        {
+                            "key": "asset_agreement_accepted",
+                            "value": "true",
+                            "type": "text",
+                            "description": "Optional: Only updates if provided and non-empty (omit/empty string keeps existing DB value). Boolean: true or false."
+                        },
+                        {
+                            "key": "cancelled_cheque",
+                            "type": "file",
+                            "src": [],
+                            "description": "Can also be keyed as 'passbook_copy'"
+                        }
+                    ]
+                },
+                "url": {
+                    "raw": "{{local}}/api/onboarding/bank-and-asset",
+                    "host": [
+                        "{{local}}"
+                    ],
+                    "path": [
+                        "api",
+                        "onboarding",
+                        "bank-and-asset"
+                    ]
+                },
+                "description": "This API performs a partial upsert. Only the fields you include in the body will be updated in the database. If you omit a field, the existing database value remains unchanged."
+            },
+            "response": []
+        },
+        {
+            "name": "Step 4: Compliance & Joining Letter",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "formdata",
+                    "formdata": [
+                        {
+                            "key": "policy_acknowledged",
+                            "value": "true",
+                            "type": "text",
+                            "description": "Corresponds to 'I have read and agree to all policies'"
+                        },
+                        {
+                            "key": "onboarding_status",
+                            "value": "COMPLETED",
+                            "type": "text",
+                            "description": "Triggered when user clicks 'Submit Onboarding'"
+                        },
+                        {
+                            "key": "signed_joining_letter",
+                            "type": "file",
+                            "src": [],
+                            "description": "The file uploaded in the 'Upload Signed Joining Letter' section"
+                        }
+                    ]
+                },
+                "url": {
+                    "raw": "{{local}}/api/onboarding/compliance",
+                    "host": [
+                        "{{local}}"
+                    ],
+                    "path": [
+                        "api",
+                        "onboarding",
+                        "compliance"
+                    ]
+                },
+                "description": "This API performs a partial upsert for Step 4. It updates policy acknowledgement, sets the onboarding status to COMPLETED, and uploads the signed joining letter to S3 and the user_onboardings table."
+            },
+            "response": []
+        },
+        {
+            "name": "Geofence Management",
+            "item": [
+                {
+                    "name": "Create Geofence",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{tokenB}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/geofences",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "geofences"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"org_id\":\"{{orgId}}\",\"user_id\":\"{{userId}}\",\"landmark\":\"Park Street Gate\",\"latitude\":22.5726,\"longitude\":88.3639,\"radius_meters\":100}"
+                        },
+                        "description": "Create a user-scoped geofence from latitude, longitude, and landmark.\n\nPOST /api/geofences\nAuth: admin, hr, or manager only.\nBody: org_id (required, must match JWT org), user_id (required), landmark (required), latitude, longitude, radius_meters (optional, default 100).\nGeofence is created for the specified user in the caller's org."
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "const json = pm.response.json();",
+                                    "if (json.id) {",
+                                    "  pm.collectionVariables.set('geofenceId', json.id);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "List Geofences",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{tokenB}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/geofences",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "geofences"
+                            ]
+                        },
+                        "description": "List all geofences for the authenticated tenant org.\n\nGET /api/geofences"
+                    }
+                },
+                {
+                    "name": "Get Geofence by ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{tokenB}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/geofences/{{geofenceId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "geofences",
+                                "{{geofenceId}}"
+                            ]
+                        },
+                        "description": "Get a single geofence by id (org-scoped).\n\nGET /api/geofences/:id"
+                    }
+                },
+                {
+                    "name": "Update Geofence",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{tokenB}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/geofences/{{geofenceId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "geofences",
+                                "{{geofenceId}}"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"org_id\":\"{{orgId}}\",\"user_id\":\"{{userId}}\",\"landmark\":\"Updated Park Street Gate\",\"latitude\":22.5726,\"longitude\":88.3639,\"radius_meters\":150}"
+                        },
+                        "description": "Full replace of a user-scoped geofence.\n\nPUT /api/geofences/:id\nAuth: admin, hr, or manager only.\nBody: org_id (required, must match JWT org), user_id (required), landmark (required), latitude, longitude, radius_meters (optional, default 100).\nGeofence is updated for the specified user in the caller's org."
+                    }
+                },
+                {
+                    "name": "List Geofence Events (Admin/HR/Manager)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{tokenB}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/geofences/events?userId={{userId}}&date=2026-09-02&page=1&limit=25",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "geofences",
+                                "events"
+                            ],
+                            "query": [
+                                {
+                                    "key": "userId",
+                                    "value": "{{userId}}"
+                                },
+                                {
+                                    "key": "date",
+                                    "value": "2026-09-02",
+                                    "description": "Optional single calendar day (YYYY-MM-DD, UTC). Cannot be combined with from/to."
+                                },
+                                {
+                                    "key": "from",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": "Optional ISO datetime lower bound on recorded_at"
+                                },
+                                {
+                                    "key": "to",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": "Optional ISO datetime upper bound on recorded_at"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "25"
+                                }
+                            ]
+                        },
+                        "description": "Lists geofence enter/exit event logs (geofence_events).\n\nAuth: admin, hr, or manager. Scoped to caller org.\nOptional filters: userId, date (YYYY-MM-DD UTC day), or from/to (ISO). date cannot be combined with from/to. Ordered by recorded_at desc. Includes related geofence (landmark, coordinates, radius).\n\nGET /api/geofences/events"
+                    }
+                },
+                {
+                    "name": "Record Geofence Event (In/Out)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{tokenC}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/geofences/{{geofenceId}}/events",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "geofences",
+                                "{{geofenceId}}",
+                                "events"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"event_type\":\"in\",\"latitude\":22.5726,\"longitude\":88.3639}"
+                        },
+                        "description": "Record an enter (in) or exit (out) geofence event for the authenticated user. recorded_at is set by the server.\n\nPOST /api/geofences/:id/events\nBody: event_type (required: in|out), latitude/longitude (optional)."
+                    }
+                },
+                {
+                    "name": "Delete Geofence",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{tokenB}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/geofences/{{geofenceId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "geofences",
+                                "{{geofenceId}}"
+                            ]
+                        },
+                        "description": "Delete a geofence by id (org-scoped).\n\nDELETE /api/geofences/:id\nAuth: admin, hr, or manager only."
+                    }
+                }
+            ]
+        }
+    ],
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "https://devhr-api.shlokasolutions.app"
+        },
+        {
+            "key": "local",
+            "value": "http://localhost:6000"
+        },
+        {
+            "key": "tokenA",
+            "value": "",
+            "description": "Super Admin Token"
+        },
+        {
+            "key": "tokenB",
+            "value": "",
+            "description": "Tenant Admin Token"
+        },
+        {
+            "key": "tokenC",
+            "value": "",
+            "description": "Employee Token"
+        },
+        {
+            "key": "orgId",
+            "value": ""
+        },
+        {
+            "key": "deptId",
+            "value": ""
+        },
+        {
+            "key": "locationId",
+            "value": ""
+        },
+        {
+            "key": "geofenceId",
+            "value": ""
+        },
+        {
+            "key": "shiftId",
+            "value": ""
+        },
+        {
+            "key": "userId",
+            "value": ""
+        },
+        {
+            "key": "companyCode",
+            "value": "BETA001"
+        },
+        {
+            "key": "adminEmail",
+            "value": "admin@betaindustries.com"
+        },
+        {
+            "key": "employeeEmail",
+            "value": "sarah@acme.com"
+        },
+        {
+            "key": "adminTempPassword",
+            "value": ""
+        },
+        {
+            "key": "employeeTempPassword",
+            "value": ""
+        },
+        {
+            "key": "adminNewPassword",
+            "value": "Welcome@123"
+        },
+        {
+            "key": "employeeNewPassword",
+            "value": "EmpNew@123"
+        },
+        {
+            "key": "employeeId",
+            "value": "ACME-EMP-2"
+        },
+        {
+            "key": "profileEmail",
+            "value": "sarah.personal@acme.com"
+        },
+        {
+            "key": "selectionToken",
+            "value": ""
+        },
+        {
+            "key": "selectionTokenEmployee",
+            "value": ""
+        },
+        {
+            "key": "fileUrl",
+            "value": ""
+        },
+        {
+            "key": "fileKey",
+            "value": ""
+        },
+        {
+            "key": "attendanceLogId",
+            "value": ""
+        },
+        {
+            "key": "correctionRequestId",
+            "value": ""
+        },
+        {
+            "key": "leaveTypeId",
+            "value": ""
+        },
+        {
+            "key": "leaveRequestId",
+            "value": ""
+        },
+        {
+            "key": "leaveYear",
+            "value": "2035"
+        },
+        {
+            "key": "salaryComponentId",
+            "value": ""
+        },
+        {
+            "key": "salaryStructureId",
+            "value": ""
+        },
+        {
+            "key": "payrollRecordId",
+            "value": ""
+        }
+    ]
+}

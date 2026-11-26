@@ -1,0 +1,36 @@
+node_modules
+.dist
+.DS_Store
+.env
+.env.*
+!.env.example
+npm-debug.log*
+
+# Build
+/dist
+
+# Logs
+logs
+*.log
+coverage
+.nyc_output
+.eslintcache
+.vscode
+.idea
+
+# Database scripts
+src/database/scripts/*.ts
+
+package-lock.json
+
+# Local Guides and Docs
+guide.txt
+DB_SCHEMA.md
+
+syncPostman.js
+
+samples/*
+!samples/attendance_bulk_import_sample.xlsx
+!samples/README.md
+scripts/
+docs/

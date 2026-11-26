@@ -1,0 +1,244 @@
+Shloka HR Suite Notification Automation
+
+Objective
+This document defines the dynamic notification system for the Shloka HR Suite to automate 
+employee, manager, and HR reminders based on attendance, shifts, breaks, birthdays, 
+anniversaries, and leave workflows.
+
+Global Notification Standards
+
+Supported Channels
+• Push Notification (Mobile App)
+• Email (for leave workflows)
+
+Dynamic Variables / Placeholders
+Use the following placeholders dynamically from backend data:
+• {employee_name}
+• {manager_name}
+• {shift_start_time}
+• {shift_end_time}
+• {break_start_time}
+• {break_end_time}
+• {team_member_name}
+• {occasion_type} → Birthday / Work Anniversary
+• {leave_applicant_name}
+• {leave_type}
+• {leave_dates}
+• {company_name}
+
+Core Logic Rules
+• Prevent duplicate notifications for the same trigger event.
+• Use employee timezone/location-based shift timing.
+• If shift timing is updated, notifications should auto-adjust.
+• Notifications must only trigger for active employees.
+• Exclude employees on approved leave from attendance reminders.
+• Track notification status: Pending, Sent, Read, Dismissed.
+
+Notification Automation Matrix
+
+1. 15 Minutes Before Shift Starts
+
+Trigger Condition:
+Current time = Shift Start Time - 15 minutes
+
+Audience:
+Employee, Manager, HR
+
+Title:
+Your shift starts in 15 minutes 
+
+Body:
+Hi {employee_name}, your shift begins at {shift_start_time}. Please be ready to clock in on 
+time.
+
+Automation Rule:
+Run once daily per scheduled shift.
+
+2. 30 Minutes After Shift Starts (If Employee Not Logged In)
+
+Trigger Condition:
+Current time = Shift Start Time + 30 minutes AND no check-in recorded
+
+Audience:
+Employee, Manager, HR
+
+Title:
+You haven’t clocked in yet 
+
+Body:
+Hi {employee_name}, you missed your scheduled login at {shift_start_time}. Please clock in 
+immediately or contact your manager.
+
+Automation Rule:
+Only if attendance status = Absent / Not Logged In
+
+3. 15 Minutes Before Shift Ends
+
+Trigger Condition:
+Current time = Shift End Time - 15 minutes
+
+Audience:
+Employee, Manager, HR
+
+Title:
+Your shift ends in 15 minutes 
+
+Body:
+Hi {employee_name}, your shift ends at {shift_end_time}. Please complete pending tasks and 
+prepare to clock out.
+
+Automation Rule:
+Only if check-in exists AND check-out missing
+
+4. 30 Minutes After Shift Ends (If Employee Not Logged Out)
+
+Trigger Condition:
+Current time = Shift End Time + 30 minutes AND no check-out recorded
+
+Audience:
+Employee, Manager, HR
+
+Title:
+Shift ended 30 minutes ago 
+
+Body:
+Hi {employee_name}, your scheduled shift ended at {shift_end_time}. If you’re continuing with 
+overtime, no action is needed right now. If you’ve completed work for the day, please remember 
+to clock out to keep your attendance updated.
+
+Automation Rule:
+Only if check-in exists AND check-out missing
+
+5. 5 Minutes Before Break Starts
+
+Trigger Condition:
+Current time = Break Start Time - 5 minutes
+
+Audience:
+Employee, Manager, HR
+
+Title:
+Break starts in 5 minutes 
+
+Body:
+Hi {employee_name}, your scheduled break begins at {break_start_time}. Please wrap up 
+current tasks.
+
+Automation Rule:
+Only if break_start_time doesn’t exists.
+
+6. 5 Minutes Before Break Ends
+
+Trigger Condition:
+Current time = Break End Time - 5 minutes
+
+Audience:
+Employee, Manager, HR
+
+Title:
+Break ends in 5 minutes 
+
+Body:
+Hi {employee_name}, your break ends at {break_end_time}. Please be ready to resume work.
+
+Automation Rule:
+Only if break_start_time exists AND break_end_time is missing
+
+7. Break Exceeded by 20 Minutes
+
+Trigger Condition:
+Current time = Total Break Duration + 20 minutes 
+
+Audience:
+Employee, Manager, HR
+
+Title:
+Your break time has been exceeded by 20 minutes 
+
+Body:
+Hi {employee_name}, your scheduled break time has now been exceeded by 20 minutes. Please 
+resume work immediately.
+
+8. Birthday & Work Anniversary Notifications
+
+Trigger Condition:
+Employee birthday date OR joining date matches current date
+
+Audience:
+All Employees (excluding optionally self)
+
+Title Options:
+• Celebrate {team_member_name}’s Birthday today 
+• Celebrate {team_member_name}’s Work Anniversary today 
+
+Body Options:
+• Wish {team_member_name} a very happy birthday and make their day special!
+• Join us in celebrating {team_member_name}’s work anniversary today.
+
+Self-Notification:
+
+Title:
+Happy {occasion_type}, {employee_name}! 
+
+Body:
+Wishing you a fantastic {occasion_type} from all of us at {company_name}.
+
+9. Holiday Notifications
+
+Audience:
+Employee, Manager, HR
+
+Title Options:
+Happy {holiday_title}, {employee_name}! 
+
+Body:
+Wishing you a fantastic {holiday_title} from {company_name}.
+
+10. Leave Request Notification for Managers & HR
+
+Trigger Condition:
+Employee submits leave request
+
+Audience:
+Reporting Manager + HR
+
+Title:
+New leave request submitted 
+
+Body:
+{leave_applicant_name} has requested {leave_type} leave for {leave_dates}. Please review and 
+take action.
+
+Action Buttons:
+• Approve
+• Reject
+• View Details
+
+11. Leave Approval / Rejection Notification for Employee
+
+Trigger Condition:
+Manager or HR updates leave status
+
+Audience:
+Employee
+
+Approval Title:
+Your leave request was approved 
+
+Approval Body:
+Hi {employee_name}, your {leave_type} leave for {leave_dates} has been approved.
+
+Rejection Title:
+Your leave request was declined 
+
+Rejection Body:
+Hi {employee_name}, your {leave_type} leave for {leave_dates} was not approved. Please 
+contact your manager or HR.
+
+Note
+
+Implement this using:
+• Node Cron / BullMQ / Firebase Scheduler / AWS EventBridge
+• Firebase Cloud Messaging (FCM) for push notifications
+• Role-based notification permissions
+• Notification history logs for audit
